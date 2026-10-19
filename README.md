@@ -22,7 +22,7 @@ extra protocol layer between you and the browser.
 
 ## Requirements
 
-macOS, and the CloakBrowser stealth Chromium binary:
+macOS or Linux, and the CloakBrowser stealth Chromium binary:
 
 ```bash
 npx cloakbrowser install     # or: make browser
@@ -345,4 +345,4 @@ keep the port local.
 - **Coalescing is lossy at cursor boundaries.** If you resume exactly at a
   coalesced event you may miss the final merged payload.
 - **`console`/`pageerror` need `--console-hook`** (see above).
-- **macOS only**, and only the CloakBrowser binary.
+- **CloakBrowser only** (macOS and Linux), and no other browser.

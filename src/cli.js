@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CLI entry: `pi-browser [options]`
 //
-// CloakBrowser-only (macOS). By default the server launches CloakBrowser in
+// CloakBrowser-only (macOS and Linux). By default the server launches CloakBrowser in
 // headed mode against a dedicated profile at ~/.pi-browser/profile (created if
 // missing). Pass --attach-only to connect to a browser you started yourself.
 //

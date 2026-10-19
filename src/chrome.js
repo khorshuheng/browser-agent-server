@@ -1,4 +1,4 @@
-// CloakBrowser lifecycle (macOS).
+// CloakBrowser lifecycle (macOS and Linux).
 //
 // CloakBrowser is a stealth Chromium with source-level fingerprint patches. It
 // is a standard Chromium binary, so this server drives it over plain CDP; we
@@ -8,7 +8,8 @@
 // Binary resolution order:
 //   1. an explicit path (--binary)
 //   2. $CLOAKBROWSER_BINARY_PATH
-//   3. the newest install under ~/.cloakbrowser/chromium-*/
+//   3. the newest install under ~/.cloakbrowser/chromium-*/, looked up with the
+//      platform's layout (macOS: an .app bundle, Linux: a bare binary)
 //
 // Install it once with: npx cloakbrowser install
 
@@ -20,6 +21,10 @@ import { CdpConnection, fetchBrowserEndpoint } from './cdp.js';
 
 export const CLOAK_HOME = join(homedir(), '.cloakbrowser');
 export const MAC_RELATIVE_BINARY = 'Chromium.app/Contents/MacOS/Chromium';
+// Where the launcher lives inside an extracted install dir, per platform. The
+// macOS build ships an .app bundle; the Linux tarball drops `chrome` at the top
+// level.
+export const RELATIVE_BINARIES = [MAC_RELATIVE_BINARY, 'chrome', 'chromium'];
 export const DEFAULT_PROFILE = join(homedir(), '.pi-browser', 'profile');
 // Deliberately not 9222: that is the conventional Chrome debugging port and is
 // frequently already taken by a user's own Chrome. Attaching to the wrong
@@ -51,8 +56,10 @@ export function findInstalledBinary() {
       return 0;
     });
     for (const d of sorted) {
-      const bin = join(CLOAK_HOME, d, MAC_RELATIVE_BINARY);
-      if (isExecutable(bin)) return bin;
+      for (const rel of RELATIVE_BINARIES) {
+        const bin = join(CLOAK_HOME, d, rel);
+        if (isExecutable(bin)) return bin;
+      }
     }
   } catch {
     /* not installed */
@@ -93,7 +100,8 @@ export function resolveFingerprint(userDataDir, explicit) {
 }
 
 export function stealthArgs(fingerprint) {
-  return [`--fingerprint=${fingerprint}`, '--fingerprint-platform=macos'];
+  const platform = process.platform === 'darwin' ? 'macos' : 'linux';
+  return [`--fingerprint=${fingerprint}`, `--fingerprint-platform=${platform}`];
 }
 
 export async function isBrowserListening(port, timeoutMs = 1500) {

@@ -22,6 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SMOKE_HEADLESS: '1'
+      # The hosted runner's kernel/AppArmor setup blocks Chrome's user-namespace
+      # sandbox, so the browser refuses to start without this.
+      SMOKE_ARGS: '--no-sandbox'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

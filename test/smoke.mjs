@@ -16,7 +16,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from '../src/server.js';
-import { resolveBinary } from '../src/chrome.js';
+import { resolveBinary, stealthArgs } from '../src/chrome.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = `file://${join(__dirname, 'fixtures', 'form.html')}`;
@@ -73,8 +73,7 @@ function launchBrowser(profile) {
     `--remote-debugging-port=${CDP_PORT}`,
     '--remote-allow-origins=*',
     `--user-data-dir=${profile}`,
-    '--fingerprint=4242',
-    '--fingerprint-platform=macos',
+    ...stealthArgs(4242),
     ...(HEADLESS ? ['--headless=new', '--disable-gpu'] : []),
     '--no-first-run',
     '--no-default-browser-check',
@@ -84,8 +83,22 @@ function launchBrowser(profile) {
     ...EXTRA_ARGS,
     'about:blank',
   ];
-  const child = spawn(BINARY, args, { stdio: VERBOSE ? 'inherit' : 'ignore' });
+  // Keep the tail of the browser's output: when the launch fails (missing
+  // sandbox, bad flags, unresolvable libs) that stderr is the only diagnosis,
+  // and CI only ever sees it if we capture it here.
+  /** @type {string[]} */
+  const output = [];
+  const child = spawn(BINARY, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+  for (const stream of [child.stdout, child.stderr]) {
+    stream?.on('data', (chunk) => {
+      const text = String(chunk);
+      output.push(text);
+      if (output.length > 40) output.shift();
+      if (VERBOSE) process.stderr.write(text);
+    });
+  }
   child.on('error', () => {});
+  /** @type {any} */ (child).output = output;
   return child;
 }
 
@@ -473,7 +486,12 @@ async function main() {
   };
 
   try {
-    if (!(await waitForBrowser())) throw new Error(`CloakBrowser did not start on port ${CDP_PORT}`);
+    if (!(await waitForBrowser())) {
+      const tail = (browser.output || []).join('').trim();
+      throw new Error(
+        `CloakBrowser did not start on port ${CDP_PORT}${tail ? `\nbrowser output:\n${tail}` : ''}`,
+      );
+    }
     console.log(`chrome ready on ${CDP_PORT}`);
 
     server = createServer({

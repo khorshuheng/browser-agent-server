@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  # Fast, browser-free gate: lint, formatting, syntax, and type checking.
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  # End-to-end smoke test against the real HTTP/CDP surface and file fixtures.
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      SMOKE_HEADLESS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install CloakBrowser
+        run: npm run browser
+      - name: Smoke test
+        run: npm test

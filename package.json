@@ -1,0 +1,36 @@
+{
+  "name": "browser-agent-server",
+  "version": "1.0.0",
+  "description": "Browser control server for coding agents",
+  "main": "index.js",
+  "scripts": {
+    "test": "CONSOLE_HOOK=1 node test/smoke.mjs",
+    "start": "node src/cli.js",
+    "lint": "eslint src examples test eslint.config.js",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run format:check && npm run syntax && npm run typecheck",
+    "typecheck": "tsc -p jsconfig.json",
+    "syntax": "for f in src/*.js examples/*.js test/*.mjs; do node --check \"$f\" || exit 1; done && echo 'syntax ok'",
+    "browser": "npx cloakbrowser install"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "ws": "^8.22.0"
+  },
+  "bin": {
+    "pi-browser": "src/cli.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.4",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "^7.0.2"
+  }
+}
